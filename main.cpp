@@ -7,50 +7,26 @@
 using namespace std;
 using namespace miosix;
 
-const char* filename = "test_file";
-
-
-int read_test(){
-    cout << "Opening file:" << filename << endl;
-    ifstream input_file = ifstream(filename);
-    string line;
-    int position = 1;
-    if (!input_file.is_open()){
-        cout << "Cannot open file" << endl;
-        return -1;
-    }
-    cout << "Reading file line by line" << endl;
-    while ( getline( input_file, line )) {
-        cout << "[" << position << "]:" << line << endl;
-        position += 1;
-    }
-    cout << "Closing file" << endl;
-    input_file.close();
-    cout << "File closed" << endl;
-    return 0;
-}
-
-int write_test(){
-    cout << "Opening file:" << filename << endl;
-    ofstream output_file = ofstream(filename);
-    if (!output_file.is_open()){
-        cout << "Cannot open file" << endl;
-        return -1;
-    }
-    cout << "Writing file line by line" << endl;
-    for(int i = 1; i < 11; i++){
-        output_file << "This is line" << i << endl;
-        cout << "Writing line " << i << "" << endl;
-    }
-    cout << "Eof reached closing file" << endl;
-    output_file.close();
-    cout << "File closed" << endl;
-    return 0;
-}
+const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    if(write_test() == 0){
-        return read_test();
+    printf("Testing file system\n");
+    ofstream output_file = ofstream(filename);
+    if(output_file.is_open()){
+        printf("File system is working\n");
+    }else{
+        printf("File system is not working\n");
+        return -1;
     }
+
+    printf("Writing test\n");
+    for(int i = 1; i < 11; i++){
+        output_file << "This is line " << i << endl;
+        printf("Writing line %d\n", i);
+    }
+    output_file.close();
+    printf("File closed\n");
+
+    return 1;
 }
