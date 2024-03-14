@@ -1521,20 +1521,20 @@ bool retriveCardData(){
     unsigned int SECTOR_SIZE = 0;
     unsigned int READ_BL_LEN = 0;
     unsigned int CSD_STRUCTURE = 0;
-    DBG("Retriving card data\n");
+    DBG("[SDDriver] Retriving card data\n");
     ///ask and reply
-    DBG("Checking CSD_STRUCTURE version\n");
+    DBG("[SDDriver] Checking CSD_STRUCTURE version\n");
     if(CSD_STRUCTURE){//STRUCTURE IS V2
-        DBG("VERSION 2.0\n");
+        DBG("[SDDriver] VERSION 2.0\n");
         //This sizes are fixed for CSD_STRUCTURE V2
         blockSize = 512;
         sectorSize = 64;
         cardSize = C_SIZE * 512;
     }else{
-        DBG("VERSION 1.0\n");
+        DBG("[SDDriver] VERSION 1.0\n");
         blockSize = 1 << READ_BL_LEN;//BLOCK_LEN = 2^READ_BL_LEN
         sectorSize = ((SECTOR_SIZE + 1) * blockSize) / 1024;//TRUE_SECTOR_SIZE = READ_BL_LEN * (SECTOR_SIZE + 1)
-        cardSize = (C_SIZE + 1) * (1 << (C_SIZE_MULT + 2)) * blockSize;//memory capacity = (C_SIZE+1) * 2^C_SIZE_MULT+2  * BLOCK_LEn
+        cardSize = (C_SIZE + 1) * (1 << (C_SIZE_MULT + 2)) * blockSize / 1024;//memory capacity = (C_SIZE+1) * 2^C_SIZE_MULT+2  * BLOCK_LEn
     }
     sectorCount = cardSize / sectorSize;
     return true;
