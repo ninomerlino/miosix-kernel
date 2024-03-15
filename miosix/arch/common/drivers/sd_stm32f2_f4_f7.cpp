@@ -432,10 +432,10 @@ public:
      * \param result result of command
      */
     CmdResult(unsigned char cmd, Error error): cmd(cmd), error(error) {
-        response[0] = SDIO->RESP1;
-        response[1] = SDIO->RESP2;
-        response[2] = SDIO->RESP3;
-        response[3] = SDIO->RESP4;
+        response[0] = (unsigned int) SDIO->RESP1;
+        response[1] = (unsigned int) SDIO->RESP2;
+        response[2] = (unsigned int) SDIO->RESP3;
+        response[3] = (unsigned int) SDIO->RESP4;
     }
 
     /**
