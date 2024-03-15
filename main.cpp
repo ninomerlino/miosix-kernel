@@ -10,48 +10,14 @@ using namespace miosix;
 
 void fileSystemTest();
 void printCharAsBinary(char c);
+void deviceTest();
 int *resultToInt(char *c, int size);
 
 const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    FILE* deviceSd = fopen("/dev/sda", "r");
-
-    if(deviceSd == NULL){
-        printf("Device not found\n");
-        return -1;
-    } else {
-        printf("Device found\n");
-    }
-
-    int fileDescriptor = fileno(deviceSd);
-
-    printf("File descriptor: %d\n", fileDescriptor);
-
-    char *commandResultBuffer = new char[16];
-    int ioControl = ioctl(fileDescriptor, 404, commandResultBuffer);
-
-    printf("IO control: %d\n", ioControl);
-    //Print command buffer as a string of bits
-    printf("Command result buffer: \n");
-    for(int i = 0; i < 16; i++){
-        printCharAsBinary(commandResultBuffer[i]);
-    }
-    printf("\n");
-    int *commandResultBufferInt = resultToInt(commandResultBuffer, 16);
-
-    printf("Device Size: ");
-    for(int i = 73; i >= 62; i--) printf("%d", commandResultBufferInt[i]);
-    printf("\n");
-
-    printf("Size multiplier: ");
-    for(int i = 49; i >= 47; i--) printf("%d", commandResultBufferInt[i]);
-    printf("\n");
-
-    printf("Read BL LEN: ");
-    for(int i = 83; i >= 80; i--) printf("%d", commandResultBufferInt[i]);
-    printf("\n");
+    fileSystemTest();
     
     return 1;
 }
@@ -90,4 +56,43 @@ int *resultToInt(char *c, int size){
         }
     }
     return result;
+}
+
+void deviceTest(){
+    FILE* deviceSd = fopen("/dev/sda", "r");
+
+    if(deviceSd == NULL){
+        printf("Device not found\n");
+    } else {
+        printf("Device found\n");
+    }
+
+    int fileDescriptor = fileno(deviceSd);
+
+    printf("File descriptor: %d\n", fileDescriptor);
+
+    char *commandResultBuffer = new char[16];
+    int ioControl = ioctl(fileDescriptor, 404, commandResultBuffer);
+
+    printf("IO control: %d\n", ioControl);
+    //Print command buffer as a string of bits
+    printf("Command result buffer: \n");
+    for(int i = 0; i < 16; i++){
+        printCharAsBinary(commandResultBuffer[i]);
+    }
+    printf("\n");
+    int *commandResultBufferInt = resultToInt(commandResultBuffer, 16);
+
+    printf("Device Size: ");
+    for(int i = 73; i >= 62; i--) printf("%d", commandResultBufferInt[i]);
+    printf("\n");
+
+    printf("Size multiplier: ");
+    for(int i = 49; i >= 47; i--) printf("%d", commandResultBufferInt[i]);
+    printf("\n");
+
+    printf("Read BL LEN: ");
+    for(int i = 83; i >= 80; i--) printf("%d", commandResultBufferInt[i]);
+    printf("\n");
+
 }

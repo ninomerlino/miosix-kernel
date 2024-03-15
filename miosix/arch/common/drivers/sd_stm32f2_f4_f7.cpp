@@ -1523,8 +1523,9 @@ bool retriveCardData(){
     unsigned int CSD_STRUCTURE = 0;
     DBG("[SDDriver] Retriving card data\n");
     
-    CmdResult r = Command::send(Command::CMD9, NULL);
-    if(r.validateR2Response()==false) return false;
+    CmdResult r = Command::send(Command::CMD9, 0);
+    // Validate response
+    if(r.validateError()==false) return false;
     r.getLongResponse(raw_csd);
 
     CSD_STRUCTURE |= (raw_csd[0] & 0xC0000000) >> 30;
