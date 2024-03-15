@@ -1556,11 +1556,20 @@ bool retriveCardData(){
 int SDIODriver::ioctl(int cmd, void* arg)
 {
     DBG("SDIODriver::ioctl()\n");
-    if(cmd!=IOCTL_SYNC) return -ENOTTY;
     Lock<FastMutex> l(mutex);
-    //Note: no need to select card, since status can be queried even with card
-    //not selected.
-    return waitForCardReady() ? 0 : -EFAULT;
+    switch (cmd){
+        case IOCTL_SYNC:
+            //Note: no need to select card, since status can be queried even with card
+            //not selected.
+            return waitForCardReady() ? 0 : -EFAULT;
+        case 404:
+            CmdResult r = Command::send(Command::CMD9, 0);
+            if(r.validateError()==false) return -EFAULT;
+            r.getLongResponse(reinterpret_cast<unsigned int*>(arg));
+            return 0;
+        default:
+            return -ENOTTY;
+    }
 }
 
 SDIODriver::SDIODriver() : Device(Device::BLOCK)

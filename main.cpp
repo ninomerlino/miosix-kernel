@@ -18,7 +18,7 @@ const char* filename = "/sd/test.txt";
 int main(int argc, char* argv[])
 {
     fileSystemTest();
-    
+    deviceTest();    
     return 1;
 }
 
@@ -71,28 +71,9 @@ void deviceTest(){
 
     printf("File descriptor: %d\n", fileDescriptor);
 
-    char *commandResultBuffer = new char[16];
+    unsigned int commandResultBuffer[4];
     int ioControl = ioctl(fileDescriptor, 404, commandResultBuffer);
 
-    printf("IO control: %d\n", ioControl);
-    //Print command buffer as a string of bits
-    printf("Command result buffer: \n");
-    for(int i = 0; i < 16; i++){
-        printCharAsBinary(commandResultBuffer[i]);
-    }
-    printf("\n");
-    int *commandResultBufferInt = resultToInt(commandResultBuffer, 16);
-
-    printf("Device Size: ");
-    for(int i = 73; i >= 62; i--) printf("%d", commandResultBufferInt[i]);
-    printf("\n");
-
-    printf("Size multiplier: ");
-    for(int i = 49; i >= 47; i--) printf("%d", commandResultBufferInt[i]);
-    printf("\n");
-
-    printf("Read BL LEN: ");
-    for(int i = 83; i >= 80; i--) printf("%d", commandResultBufferInt[i]);
-    printf("\n");
-
+    printf("IO Control: %d\n", ioControl);
+    printf("Command result: %x\n%x\n%x\n%x\n", commandResultBuffer[0], commandResultBuffer[1], commandResultBuffer[2], commandResultBuffer[3]);
 }
