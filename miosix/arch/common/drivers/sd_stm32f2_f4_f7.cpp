@@ -1522,7 +1522,11 @@ bool retriveCardData(){
     unsigned int READ_BL_LEN = 0;
     unsigned int CSD_STRUCTURE = 0;
     DBG("[SDDriver] Retriving card data\n");
-    ///ask and reply
+    
+    CmdResult r = Command::send(Command::CMD9, NULL);
+    if(r.validateR2Response()==false) return false;
+    r.getLongResponse(raw_csd);
+
     CSD_STRUCTURE |= (raw_csd[0] & 0xC0000000) >> 30;
     DBG("[SDDriver]  Checking CSD_STRUCTURE version\n");
     if(CSD_STRUCTURE){//STRUCTURE IS V2
