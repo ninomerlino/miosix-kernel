@@ -17,7 +17,7 @@ const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    fileSystemTest();
+    //fileSystemTest();
     deviceTest();    
     return 1;
 }
@@ -75,5 +75,5 @@ void deviceTest(){
     int ioControl = ioctl(fileDescriptor, 404, commandResultBuffer);
 
     printf("IO Control: %d\n", ioControl);
-    printf("Command result: %x\n%x\n%x\n%x\n", commandResultBuffer[0], commandResultBuffer[1], commandResultBuffer[2], commandResultBuffer[3]);
+    // printf("Command result: \n%x\n%x\n%x\n%x\n", commandResultBuffer[0], commandResultBuffer[1], commandResultBuffer[2], commandResultBuffer[3]);
 }
