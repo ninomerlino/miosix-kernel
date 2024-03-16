@@ -40,11 +40,11 @@
 //Note: enabling debugging might cause deadlock when using sleep() or reboot()
 //The bug won't be fixed because debugging is only useful for driver development
 ///\internal Debug macro, for normal conditions
-//#define DBG iprintf
-#define DBG(x,...) do {} while(0)
+#define DBG iprintf
+//#define DBG(x,...) do {} while(0)
 ///\internal Debug macro, for errors only
-//#define DBGERR iprintf
-#define DBGERR(x,...) do {} while(0)
+#define DBGERR iprintf
+//#define DBGERR(x,...) do {} while(0)
 
 /*
  * The SDMMC1 peripheral in the STM32F7 is basically the old SDIO with the
@@ -1511,22 +1511,17 @@ static unsigned int cardSize;//Kbytes
 static unsigned int sectorSize;//Kbytes
 static unsigned int sectorCount;
 static unsigned int blockSize;//bytes
+static unsigned int raw_csd[4];
 
 /// @brief Retrive Card Specific Data aka CSD form the attached SD card and sets the global variables cardSize, sectorSize, sectorCount, blockSize
 /// @return true if successful false if an error occured while retriving the data
-bool retriveCardData(){
-    unsigned int raw_csd[4];
+static bool retriveCardData(){
     unsigned int C_SIZE = 0;
     unsigned int C_SIZE_MULT = 0;
     unsigned int SECTOR_SIZE = 0;
     unsigned int READ_BL_LEN = 0;
     unsigned int CSD_STRUCTURE = 0;
     DBG("[SDDriver] Retriving card data\n");
-    
-    CmdResult r = Command::send(Command::CMD9, 0);
-    // Validate response
-    if(r.validateError()==false) return false;
-    r.getLongResponse(raw_csd);
 
     CSD_STRUCTURE |= (raw_csd[0] & 0xC0000000) >> 30;
     DBG("[SDDriver]  Checking CSD_STRUCTURE version\n");
@@ -1550,6 +1545,10 @@ bool retriveCardData(){
         cardSize = (C_SIZE + 1) * (1 << (C_SIZE_MULT + 2)) / 1024 * blockSize ;//memory capacity = (C_SIZE+1) * 2^C_SIZE_MULT+2  * BLOCK_LEn
     }
     sectorCount = cardSize / sectorSize;
+    DBG("[SDDriver]  Card size: %dKB\n",cardSize);
+    DBG("[SDDriver]  Sector size: %dKB\n",sectorSize);
+    DBG("[SDDriver]  Sector count: %d\n",sectorCount);
+    DBG("[SDDriver]  Block size: %d\n",blockSize);
     return true;
 }
 
@@ -1563,13 +1562,11 @@ int SDIODriver::ioctl(int cmd, void* arg)
             //not selected.
             return waitForCardReady() ? 0 : -EFAULT;
         case 404:
-            CmdResult r = Command::send(Command::CMD9, 0);
-            if(r.validateError()==false) return -EFAULT;
-            r.getLongResponse(reinterpret_cast<unsigned int*>(arg));
+            DBG("Raw CSD: %x %x %x %x\n",raw_csd[0],raw_csd[1],raw_csd[2],raw_csd[3]);
+            retriveCardData();
             return 0;
-        default:
-            return -ENOTTY;
     }
+    return -ENOTTY;
 }
 
 SDIODriver::SDIODriver() : Device(Device::BLOCK)
@@ -1608,6 +1605,16 @@ SDIODriver::SDIODriver() : Device(Device::BLOCK)
         DBGERR("RCA=0 is invalid\n");
         return;
     }
+
+    //Now that we have an RCA, we can send CMD9 to get the card's CSD
+    //Also CMD9 sends R2 response, i hope that as in CMD2 the CMDINDEX field is wrong
+    r = Command::send(Command::CMD9, Command::getRca()<<16);
+    if(r.getError()!=CmdResult::Ok && r.getError()!=CmdResult::RespNotMatch)
+    {
+        r.validateError();
+        return;
+    }
+    r.getLongResponse(raw_csd);
 
     //Lastly, try selecting the card and configure the latest bits
     {
