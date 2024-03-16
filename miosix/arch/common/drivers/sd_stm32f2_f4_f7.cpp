@@ -43,8 +43,8 @@
 #define DBG iprintf
 //#define DBG(x,...) do {} while(0)
 ///\internal Debug macro, for errors only
-#define DBGERR iprintf
-//#define DBGERR(x,...) do {} while(0)
+//#define DBGERR iprintf
+#define DBGERR(x,...) do {} while(0)
 
 /*
  * The SDMMC1 peripheral in the STM32F7 is basically the old SDIO with the
