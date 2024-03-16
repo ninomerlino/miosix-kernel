@@ -1507,15 +1507,13 @@ ssize_t SDIODriver::writeBlock(const void* buffer, size_t size, off_t where)
     return -EBADF;
 }
 
-static unsigned int cardSize;//Kbytes
-static unsigned int sectorSize;//Kbytes
-static unsigned int sectorCount;
-static unsigned int blockSize;//bytes
-static unsigned int raw_csd[4];
-
-/// @brief Retrive Card Specific Data aka CSD form the attached SD card and sets the global variables cardSize, sectorSize, sectorCount, blockSize
-/// @return true if successful false if an error occured while retriving the data
-static bool retriveCardData(){
+/**
+ * \internal
+ * Helper method, calculates the card data and stores it in the class variables
+ * \param csdResponse
+ * the CSD response from the card as an array of 4 unsigned integers which represent the 4 words of the CSD response
+ */
+void SDIODriver::calculateCardData(unsigned int csdResponse[4]){
     unsigned int C_SIZE = 0;
     unsigned int C_SIZE_MULT = 0;
     unsigned int SECTOR_SIZE = 0;
@@ -1523,22 +1521,22 @@ static bool retriveCardData(){
     unsigned int CSD_STRUCTURE = 0;
     DBG("[SDDriver] Retriving card data\n");
 
-    CSD_STRUCTURE |= (raw_csd[0] & 0xC0000000) >> 30;
-    DBG("[SDDriver]  Checking CSD_STRUCTURE version\n");
+    CSD_STRUCTURE |= (csdResponse[0] & 0xC0000000) >> 30;
+    DBG("[SDDriver]  Checking CSD_STRUCTURE version: ");
     if(CSD_STRUCTURE){//STRUCTURE IS V2
-        DBG("[SDDriver] VERSION 2.0\n");
+        DBG("VERSION 2.0\n");
         //This sizes are fixed for CSD_STRUCTURE V2
-        C_SIZE |= ((raw_csd[1] & 0x0000003F) << 16) | ((raw_csd[2] & 0xFFFF00000) >> 16);
+        C_SIZE |= ((csdResponse[1] & 0x0000003F) << 16) | ((csdResponse[2] & 0xFFFF00000) >> 16);
 
         blockSize = 512;
         sectorSize = 64;
         cardSize = C_SIZE * 512;
     }else{
-        DBG("[SDDriver]  VERSION 1.0\n");
-        READ_BL_LEN |= (raw_csd[1] & 0x000F0000) >> 16;
-        SECTOR_SIZE |= (raw_csd[2] & 0x00003F80) >> 7;
-        C_SIZE |= ((raw_csd[1] & 0x000003FF) << 2) | ((raw_csd[2] & 0xC0000000) >> 30);
-        C_SIZE_MULT |= (raw_csd[2] & 0x00038000) >> 15;
+        DBG("VERSION 1.0\n");
+        READ_BL_LEN |= (csdResponse[1] & 0x000F0000) >> 16;
+        SECTOR_SIZE |= (csdResponse[2] & 0x00003F80) >> 7;
+        C_SIZE |= ((csdResponse[1] & 0x000003FF) << 2) | ((csdResponse[2] & 0xC0000000) >> 30);
+        C_SIZE_MULT |= (csdResponse[2] & 0x00038000) >> 15;
         
         blockSize = 1 << READ_BL_LEN;//BLOCK_LEN = 2^READ_BL_LEN
         sectorSize = ((SECTOR_SIZE + 1) * blockSize) / 1024;//TRUE_SECTOR_SIZE = READ_BL_LEN * (SECTOR_SIZE + 1)
@@ -1549,7 +1547,6 @@ static bool retriveCardData(){
     DBG("[SDDriver]  Sector size: %dKB\n",sectorSize);
     DBG("[SDDriver]  Sector count: %d\n",sectorCount);
     DBG("[SDDriver]  Block size: %d\n",blockSize);
-    return true;
 }
 
 int SDIODriver::ioctl(int cmd, void* arg)
@@ -1562,9 +1559,14 @@ int SDIODriver::ioctl(int cmd, void* arg)
             //not selected.
             return waitForCardReady() ? 0 : -EFAULT;
         case 404:
-            DBG("Raw CSD: %x %x %x %x\n",raw_csd[0],raw_csd[1],raw_csd[2],raw_csd[3]);
-            retriveCardData();
+            // This has to become the command that returns the card stats
+            DBG("SDIODriver::ioctl() - Get card size\n");
+            DBG("SDIODriver::ioctl() - Card size: %dKB\n",cardSize);
+            DBG("SDIODriver::ioctl() - Sector size: %dKB\n",sectorSize);
+            DBG("SDIODriver::ioctl() - Sector count: %d\n",sectorCount);
+            DBG("SDIODriver::ioctl() - Block size: %d\n",blockSize);
             return 0;
+        case 
     }
     return -ENOTTY;
 }
@@ -1614,7 +1616,9 @@ SDIODriver::SDIODriver() : Device(Device::BLOCK)
         r.validateError();
         return;
     }
-    r.getLongResponse(raw_csd);
+    unsigned int rawCsd[4];
+    r.getLongResponse(rawCsd);
+    calculateCardData(rawCsd);
 
     //Lastly, try selecting the card and configure the latest bits
     {
