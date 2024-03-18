@@ -37,7 +37,11 @@ enum Ioctl
     IOCTL_TCSETATTR_NOW=102,
     IOCTL_TCSETATTR_FLUSH=103,
     IOCTL_TCSETATTR_DRAIN=104,
-    IOCTL_FLUSH=105
+    IOCTL_FLUSH=105,
+    IOCTL_GET_BLOCK_SIZE = 106, // Get the block size of the device in Bytes
+    IOCTL_GET_SECTOR_SIZE = 107, // Get the sector size of the device in KBytes
+    IOCTL_GET_SECTOR_COUNT = 108, // Get the number of sectors of the device
+    IOCTL_GET_DEVICE_SIZE = 109 // Get the size of the device in KBytes
 };
 
 }
