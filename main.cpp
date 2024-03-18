@@ -12,6 +12,7 @@ using namespace miosix;
 void fileSystemTest();
 void printCharAsBinary(char c);
 void deviceTest();
+void mkfsTest();
 int *resultToInt(char *c, int size);
 
 const char* filename = "/sd/test.txt";
