@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <sys/ioctl.h>
+#include "miosix/filesystem/ioctl.h"
 #include "miosix.h"
 
 using namespace std;
@@ -71,9 +72,16 @@ void deviceTest(){
 
     printf("File descriptor: %d\n", fileDescriptor);
 
-    unsigned int commandResultBuffer[4];
-    int ioControl = ioctl(fileDescriptor, 404, commandResultBuffer);
+    //Get all info
+    unsigned int blockSize, deviceSize, sectorSize, sectorCount;
+    ioctl(fileDescriptor, IOCTL_GET_BLOCK_SIZE, &blockSize);
+    ioctl(fileDescriptor, IOCTL_GET_DEVICE_SIZE, &deviceSize);
+    ioctl(fileDescriptor, IOCTL_GET_SECTOR_SIZE, &sectorSize);
+    ioctl(fileDescriptor, IOCTL_GET_SECTOR_COUNT, &sectorCount);
 
-    printf("IO Control: %d\n", ioControl);
-    // printf("Command result: \n%x\n%x\n%x\n%x\n", commandResultBuffer[0], commandResultBuffer[1], commandResultBuffer[2], commandResultBuffer[3]);
+    printf("SDIODriver::ioctl() - Card size: %dKB\n",deviceSize);
+    printf("SDIODriver::ioctl() - Sector size: %dKB\n",sectorSize);
+    printf("SDIODriver::ioctl() - Sector count: %d\n",sectorCount);
+    printf("SDIODriver::ioctl() - Block size: %d\n",blockSize);
+            
 }
