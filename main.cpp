@@ -83,6 +83,9 @@ void deviceTest(){
     printf("SDIODriver::ioctl() - Card size: %dKB\n",deviceSize);
     printf("SDIODriver::ioctl() - Sector size: %dKB\n",sectorSize);
     printf("SDIODriver::ioctl() - Sector count: %d\n",sectorCount);
-    printf("SDIODriver::ioctl() - Block size: %d\n",blockSize);
-            
+    printf("SDIODriver::ioctl() - Block size: %d\n",blockSize);           
+}
+
+void mkfsTest(){
+    
 }
