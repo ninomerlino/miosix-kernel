@@ -4001,7 +4001,8 @@ FRESULT f_forward (
 
 
 FRESULT f_mkfs (
-	const TCHAR* path,	/* Logical drive number */
+	FATFS* fs,
+	/*const TCHAR* path,*/	/* Logical drive number */
 	BYTE sfd,			/* Partitioning rule 0:FDISK, 1:SFD */
 	UINT au				/* Allocation unit [bytes] */
 )
@@ -4009,24 +4010,25 @@ FRESULT f_mkfs (
 	static const WORD vst[] = { 1024,   512,  256,  128,   64,    32,   16,    8,    4,    2,   0};
 	static const WORD cst[] = {32768, 16384, 8192, 4096, 2048, 16384, 8192, 4096, 2048, 1024, 512};
 	int vol;
-	BYTE fmt, md, sys, *tbl, pdrv, part;
+	miosix::intrusive_ref_ptr<miosix::FileBase> pdrv;
+	BYTE fmt, md, sys, *tbl, part;
 	DWORD n_clst, vs, n, wsect;
 	UINT i;
 	DWORD b_vol, b_fat, b_dir, b_data;	/* LBA */
 	DWORD n_vol, n_rsv, n_fat, n_dir;	/* Size */
-	FATFS *fs;
+	// FATFS *fs;
 	DSTATUS stat;
 
+	//
 
 	/* Check mounted drive and clear work area */
-	vol = get_ldnumber(&path);
+	vol = fs->id;
 	if (vol < 0) return FR_INVALID_DRIVE;
 	if (sfd > 1) return FR_INVALID_PARAMETER;
 	if (au & (au - 1)) return FR_INVALID_PARAMETER;
-	fs = FatFs[vol];
 	if (!fs) return FR_NOT_ENABLED;
 	fs->fs_type = 0;
-	pdrv = LD2PD(vol);	/* Physical drive */
+	pdrv = fs->drv;	/* Physical drive */
 	part = LD2PT(vol);	/* Partition (0:auto detect, 1-4:get from partition table)*/
 
 	/* Get disk statics */
