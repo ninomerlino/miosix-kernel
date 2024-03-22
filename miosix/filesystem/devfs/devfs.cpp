@@ -395,6 +395,11 @@ int DevFs::mkdir(StringPart& name, int mode)
     return -EACCES; // No directories support in DevFs yet
 }
 
+int DevFs::mkfs(unsigned char sfd, unsigned int au)
+{
+    return -EACCES; // No mkfs support in DevFs yet
+}
+
 int DevFs::rmdir(StringPart& name)
 {
     return -EACCES; // No directories support in DevFs yet

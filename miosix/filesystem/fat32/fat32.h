@@ -91,6 +91,14 @@ public:
      * \return 0 on success, or a negative number on failure
      */
     virtual int mkdir(StringPart& name, int mode);
+
+    /**
+     * Create filesystem 
+     * @param sfd Partitioning rule 0:FDISK, 1:SFD
+     * @param au Allocation unit [bytes]
+     * @return 0 on success, or a negative number on failure
+     */
+    virtual int mkfs(unsigned char sfd, unsigned int au);
     
     /**
      * Remove a directory if empty

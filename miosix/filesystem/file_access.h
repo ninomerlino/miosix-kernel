@@ -287,6 +287,15 @@ public:
      * \return 0 on success, or a negative number on failure
      */
     int mkdir(const char *name, int mode);
+
+    /**
+     * Create a filesystem
+     * \param name fs mountpoint
+     * \param sfd Partitioning rule 0:FDISK, 1:SFD
+     * \param au Allocation unit [bytes]
+     * \return 0 on success, or a negative number on failure
+     */
+    int mkfs(const char *name, unsigned char sfd, unsigned int au);
     
     /**
      * Remove a directory if empty

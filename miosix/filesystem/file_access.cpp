@@ -187,6 +187,16 @@ int FileDescriptorTable::mkdir(const char *name, int mode)
     return openData.fs->mkdir(sp,mode);
 }
 
+int FileDescriptorTable::mkfs(const char *name, unsigned char sfd, unsigned int au)
+{
+    if(name==0 || name[0]=='\0') return -EFAULT;
+    string path=absolutePath(name);
+    if(path.empty()) return -ENAMETOOLONG;
+    ResolvedPath openData=FilesystemManager::instance().resolvePath(path,true);
+    if(openData.result<0) return openData.result;
+    return openData.fs->mkfs(sfd, au);
+}
+
 int FileDescriptorTable::rmdir(const char *name)
 {
     if(name==0 || name[0]=='\0') return -EFAULT;

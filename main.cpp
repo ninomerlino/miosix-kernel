@@ -5,11 +5,11 @@
 #include <sys/ioctl.h>
 #include "miosix/filesystem/ioctl.h"
 #include "miosix.h"
+#include "miosix/filesystem/file_access.h"
 
 using namespace std;
 using namespace miosix;
 
-void fileSystemTest();
 void printCharAsBinary(char c);
 void deviceTest();
 void mkfsTest();
@@ -19,28 +19,9 @@ const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    //fileSystemTest();
-    deviceTest();    
+    deviceTest();
+    mkfsTest();
     return 1;
-}
-
-void fileSystemTest(){
-    printf("Testing file system\n");
-    ofstream output_file = ofstream(filename);
-    if(output_file.is_open()){
-        printf("File system is working\n");
-    }else{
-        printf("File system is not working\n");
-        return;
-    }
-
-    printf("Writing test\n");
-    for(int i = 1; i < 11; i++){
-        output_file << "This is line " << i << endl;
-        printf("Writing line %d\n", i);
-    }
-    output_file.close();
-    printf("File closed\n");
 }
 
 void printCharAsBinary(char c){
@@ -87,5 +68,30 @@ void deviceTest(){
 }
 
 void mkfsTest(){
-    
+    //Format sd card
+    int result = miosix::getFileDescriptorTable().mkfs("/sd", 0, 0);
+    if(result == 0){
+        printf("SD card formatted\n");
+    }else{
+        printf("Error formatting SD card\n");
+    }
+
+    //Create file
+    FILE* file = fopen(filename, "w");
+    if(file == NULL){
+        printf("Error creating file\n");
+        return;
+    }else{
+        printf("File created\n");
+    }
+
+    //Write to file
+    char text[] = "This is a test";
+    int written = fwrite(text, 1, sizeof(text), file);
+    if(written == sizeof(text)){
+        printf("Text written to file\n");
+    }
+
+    //Close file
+    fclose(file);
 }
