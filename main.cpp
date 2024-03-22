@@ -69,7 +69,7 @@ void deviceTest(){
 
 void mkfsTest(){
     //Format sd card
-    int result = miosix::getFileDescriptorTable().mkfs("/sd", 0, 0);
+    int result = miosix::getFileDescriptorTable().mkfs("/sd", 1, 0);
     if(result == 0){
         printf("SD card formatted\n");
     }else{
