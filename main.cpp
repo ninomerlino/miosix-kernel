@@ -55,16 +55,17 @@ void deviceTest(){
     printf("File descriptor: %d\n", fileDescriptor);
 
     //Get all info
-    unsigned int blockSize, deviceSize, sectorSize, sectorCount;
-    ioctl(fileDescriptor, IOCTL_GET_BLOCK_SIZE, &blockSize);
-    ioctl(fileDescriptor, IOCTL_GET_DEVICE_SIZE, &deviceSize);
-    ioctl(fileDescriptor, IOCTL_GET_SECTOR_SIZE, &sectorSize);
-    ioctl(fileDescriptor, IOCTL_GET_SECTOR_COUNT, &sectorCount);
+    unsigned int readSize, eraseSize, writeSize;
+    unsigned long long deviceSize;
+    ioctl(fileDescriptor, IOCTL_GET_READ_SIZE, &readSize);
+    ioctl(fileDescriptor, IOCTL_GET_VOLUME_SIZE, &deviceSize);
+    ioctl(fileDescriptor, IOCTL_GET_ERASE_SIZE, &eraseSize);
+    ioctl(fileDescriptor, IOCTL_GET_WRITE_SIZE, &writeSize);
 
-    printf("SDIODriver::ioctl() - Card size: %dKB\n",deviceSize);
-    printf("SDIODriver::ioctl() - Sector size: %dKB\n",sectorSize);
-    printf("SDIODriver::ioctl() - Sector count: %d\n",sectorCount);
-    printf("SDIODriver::ioctl() - Block size: %d\n",blockSize);           
+    printf("SDIODriver::ioctl() - Card size: %dKB\n",deviceSize>>10);
+    printf("SDIODriver::ioctl() - Erase size: %dKB\n",eraseSize);
+    printf("SDIODriver::ioctl() - Write count: %d\n",writeSize);
+    printf("SDIODriver::ioctl() - Read size: %d\n",readSize);           
 }
 
 void mkfsTest(){

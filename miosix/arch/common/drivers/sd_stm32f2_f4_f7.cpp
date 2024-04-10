@@ -1558,27 +1558,33 @@ int SDIODriver::ioctl(int cmd, void* arg)
             //Note: no need to select card, since status can be queried even with card
             //not selected.
             return waitForCardReady() ? 0 : -EFAULT;
-        case IOCTL_GET_BLOCK_SIZE:
+        case IOCTL_GET_READ_SIZE:
             if(arg){
-                *((unsigned int*)arg) = blockSize;
+                *((unsigned int*)arg) = 512;
                 return 0;
             }
             return -EFAULT;
-        case IOCTL_GET_DEVICE_SIZE:
+        case IOCTL_GET_WRITE_SIZE:
             if(arg){
-                *((unsigned int*)arg) = cardSize;
+                *((unsigned int*)arg) = 512;
                 return 0;
             }
             return -EFAULT;
-        case IOCTL_GET_SECTOR_COUNT:
+        case IOCTL_GET_ERASE_SIZE:
             if(arg){
-                *((unsigned int*)arg) = sectorCount;
+                *((unsigned int*)arg) = 512;
                 return 0;
             }
             return -EFAULT;
-        case IOCTL_GET_SECTOR_SIZE:
+        case IOCTL_GET_VOLUME_SIZE:
             if(arg){
-                *((unsigned int*)arg) = sectorSize;
+                /*
+                ((unsigned int*)arg)[0] = (cardSize & 0xFFC00000) >> 22;
+                ((unsigned int*)arg)[1] = cardSize << 10;
+                */
+                unsigned long long size = cardSize;
+                size <<= 10;
+                *((unsigned long long*)arg) = size;
                 return 0;
             }
             return -EFAULT;
