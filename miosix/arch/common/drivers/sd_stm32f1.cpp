@@ -324,7 +324,12 @@ public:
      * \internal
      * Default constructor
      */
-    CmdResult(): cmd(0), error(Ok), response(0) {}
+    CmdResult(): cmd(0), error(Ok) {
+        response[0] = 0;
+        response[1] = 0;
+        response[2] = 0;
+        response[3] = 0;
+    }
 
     /**
      * \internal
@@ -332,8 +337,12 @@ public:
      * \param cmd command index of command that was sent
      * \param result result of command
      */
-    CmdResult(unsigned char cmd, Error error): cmd(cmd), error(error),
-            response(SDIO->RESP1) {}
+    CmdResult(unsigned char cmd, Error error): cmd(cmd), error(error) {
+        response[0] = (unsigned int) SDIO->RESP1;
+        response[1] = (unsigned int) SDIO->RESP2;
+        response[2] = (unsigned int) SDIO->RESP3;
+        response[3] = (unsigned int) SDIO->RESP4;
+    }
 
     /**
      * \internal
@@ -341,7 +350,19 @@ public:
      * May not be valid if getError()!=Ok or the command does not send a
      * response, such as CMD0
      */
-    unsigned int getResponse() { return response; }
+    unsigned int getShortResponse() { return response[0]; }
+
+    /**
+     * \internal
+     * \param response an array in which the 127bit response will be copied from 127 downto 1 plus an extra 0 at the end
+     * Response is valid only if the command that was send returns a long reponse such as CMD9
+     */
+    void getLongResponse(unsigned int response[4]) {
+        response[0] = this->response[0];
+        response[1] = this->response[1];
+        response[2] = this->response[2];
+        response[3] = this->response[3];
+    } 
 
     /**
      * \internal
@@ -364,7 +385,7 @@ public:
 
     /**
      * \internal
-     * interprets this->getResponse() as an R1 response, and checks if there are
+     * interprets this->getShortResponse() as an R1 response, and checks if there are
      * errors, or everything is ok
      * \return true on success, false on failure
      */
@@ -379,7 +400,7 @@ public:
 
     /**
      * \internal
-     * interprets this->getResponse() as an R6 response, and checks if there are
+     * interprets this->getShortResponse() as an R6 response, and checks if there are
      * errors, or everything is ok
      * \return true on success, false on failure
      */
@@ -394,7 +415,7 @@ public:
 private:
     unsigned char cmd; ///<\internal Command index that was sent
     Error error; ///<\internal possible error that occurred
-    unsigned int response; ///<\internal 32bit response
+    unsigned int response[4]; ///<\internal all 4 32bit responses
 };
 
 bool CmdResult::validateError()
@@ -582,7 +603,7 @@ CmdResult Command::IRQsend(CommandType cmd, unsigned int arg)
         if(r.IRQvalidateR1Response()==false)
             return CmdResult(cc & 0x3f,CmdResult::ACMDFail);
         //Bit 5 @ 1 = next command will be interpreted as ACMD
-        if((r.getResponse() & (1<<5))==0)
+        if((r.getShortResponse() & (1<<5))==0)
             return CmdResult(cc & 0x3f,CmdResult::ACMDFail);
     }
 
@@ -925,7 +946,7 @@ static bool waitForCardReady()
         CmdResult cr=Command::send(Command::CMD13,Command::getRca()<<16);
         if(cr.validateR1Response()==false) return false;
         //Bit 8 in R1 response means ready for data.
-        if(cr.getResponse() & (1<<8)) return true;
+        if(cr.getShortResponse() & (1<<8)) return true;
         Thread::sleep(sleepTime);
     }
     DBGERR("Timeout waiting card ready\n");
@@ -1467,7 +1488,7 @@ static CardType detectCardType()
     if(r.validateError())
     {
         //We have an SDv2 card connected
-        if(r.getResponse()!=0x1aa)
+        if(r.getShortResponse()!=0x1aa)
         {
             DBGERR("CMD8 validation: voltage range fail\n");
             return Invalid;
@@ -1482,18 +1503,18 @@ static CardType detectCardType()
                 r.validateError();
                 return Invalid;
             }
-            if((r.getResponse() & (1<<31))==0) //Busy bit
+            if((r.getShortResponse() & (1<<31))==0) //Busy bit
             {
                 Thread::sleep(10);
                 continue;
             }
-            if((r.getResponse() & sdVoltageMask)==0)
+            if((r.getShortResponse() & sdVoltageMask)==0)
             {
                 DBGERR("ACMD41 validation: voltage range fail\n");
                 return Invalid;
             }
             DBG("ACMD41 validation: looped %d times\n",i);
-            if(r.getResponse() & (1<<30))
+            if(r.getShortResponse() & (1<<30))
             {
                 DBG("SDHC\n");
                 return SDHC;
@@ -1524,14 +1545,14 @@ static CardType detectCardType()
                     r.validateError();
                     return Invalid;
                 }
-                if((r.getResponse() & (1<<31))==0) //Busy bit
+                if((r.getShortResponse() & (1<<31))==0) //Busy bit
                 {
                     Thread::sleep(10);
                     //Send again command
                     r=Command::send(Command::ACMD41,sdVoltageMask);
                     continue;
                 }
-                if((r.getResponse() & sdVoltageMask)==0)
+                if((r.getShortResponse() & sdVoltageMask)==0)
                 {
                     DBGERR("ACMD41 validation: voltage range fail\n");
                     return Invalid;
@@ -1696,14 +1717,89 @@ ssize_t SDIODriver::writeBlock(const void* buffer, size_t size, off_t where)
     return -EBADF;
 }
 
+/**
+ * \internal
+ * Helper method, calculates the card data and stores it in the class variables
+ * \param csdResponse
+ * the CSD response from the card as an array of 4 unsigned integers which represent the 4 words of the CSD response
+ */
+void SDIODriver::calculateCardData(unsigned int csdResponse[4]){
+    unsigned int C_SIZE = 0;
+    unsigned int C_SIZE_MULT = 0;
+    unsigned int SECTOR_SIZE = 0;
+    unsigned int READ_BL_LEN = 0;
+    unsigned int CSD_STRUCTURE = 0;
+    DBG("[SDDriver] Retriving card data\n");
+
+    CSD_STRUCTURE |= (csdResponse[0] & 0xC0000000) >> 30;
+    DBG("[SDDriver]  Checking CSD_STRUCTURE version: ");
+    if(CSD_STRUCTURE){//STRUCTURE IS V2
+        DBG("VERSION 2.0\n");
+        //This sizes are fixed for CSD_STRUCTURE V2
+        C_SIZE |= ((csdResponse[1] & 0x0000003F) << 16) | ((csdResponse[2] & 0xFFFF00000) >> 16);
+
+        blockSize = 512;
+        sectorSize = 64;
+        cardSize = C_SIZE * 512;
+    }else{
+        DBG("VERSION 1.0\n");
+        READ_BL_LEN |= (csdResponse[1] & 0x000F0000) >> 16;
+        SECTOR_SIZE |= (csdResponse[2] & 0x00003F80) >> 7;
+        C_SIZE |= ((csdResponse[1] & 0x000003FF) << 2) | ((csdResponse[2] & 0xC0000000) >> 30);
+        C_SIZE_MULT |= (csdResponse[2] & 0x00038000) >> 15;
+        
+        blockSize = 1 << READ_BL_LEN;//BLOCK_LEN = 2^READ_BL_LEN
+        sectorSize = ((SECTOR_SIZE + 1) * blockSize) / 1024;//TRUE_SECTOR_SIZE = READ_BL_LEN * (SECTOR_SIZE + 1)
+        cardSize = (C_SIZE + 1) * (1 << (C_SIZE_MULT + 2)) / 1024 * blockSize ;//memory capacity = (C_SIZE+1) * 2^C_SIZE_MULT+2  * BLOCK_LEn
+    }
+    sectorCount = cardSize / sectorSize;
+    DBG("[SDDriver]  Card size: %dKB\n",cardSize);
+    DBG("[SDDriver]  Sector size: %dKB\n",sectorSize);
+    DBG("[SDDriver]  Sector count: %d\n",sectorCount);
+    DBG("[SDDriver]  Block size: %d\n",blockSize);
+}
+
 int SDIODriver::ioctl(int cmd, void* arg)
 {
     DBG("SDIODriver::ioctl()\n");
-    if(cmd!=IOCTL_SYNC) return -ENOTTY;
     Lock<FastMutex> l(mutex);
-    //Note: no need to select card, since status can be queried even with card
-    //not selected.
-    return waitForCardReady() ? 0 : -EFAULT;
+    switch (cmd){
+        case IOCTL_SYNC:
+            //Note: no need to select card, since status can be queried even with card
+            //not selected.
+            return waitForCardReady() ? 0 : -EFAULT;
+        case IOCTL_GET_READ_SIZE:
+            if(arg){
+                *((unsigned int*)arg) = 512;
+                return 0;
+            }
+            return -EFAULT;
+        case IOCTL_GET_WRITE_SIZE:
+            if(arg){
+                *((unsigned int*)arg) = 512;
+                return 0;
+            }
+            return -EFAULT;
+        case IOCTL_GET_ERASE_SIZE:
+            if(arg){
+                *((unsigned int*)arg) = 512;
+                return 0;
+            }
+            return -EFAULT;
+        case IOCTL_GET_VOLUME_SIZE:
+            if(arg){
+                /*
+                ((unsigned int*)arg)[0] = (cardSize & 0xFFC00000) >> 22;
+                ((unsigned int*)arg)[1] = cardSize << 10;
+                */
+                unsigned long long size = cardSize;
+                size <<= 10;
+                *((unsigned long long*)arg) = size;
+                return 0;
+            }
+            return -EFAULT;
+    }
+    return -ENOTTY;
 }
 
 SDIODriver::SDIODriver() : Device(Device::BLOCK)
@@ -1734,7 +1830,7 @@ SDIODriver::SDIODriver() : Device(Device::BLOCK)
     }
     r=Command::send(Command::CMD3,0);
     if(r.validateR6Response()==false) return;
-    Command::setRca(r.getResponse()>>16);
+    Command::setRca(r.getShortResponse()>>16);
     DBG("Got RCA=%u\n",Command::getRca());
     if(Command::getRca()==0)
     {
@@ -1742,6 +1838,18 @@ SDIODriver::SDIODriver() : Device(Device::BLOCK)
         DBGERR("RCA=0 is invalid\n");
         return;
     }
+
+    //Now that we have an RCA, we can send CMD9 to get the card's CSD
+    //Also CMD9 sends R2 response, i hope that as in CMD2 the CMDINDEX field is wrong
+    r = Command::send(Command::CMD9, Command::getRca()<<16);
+    if(r.getError()!=CmdResult::Ok && r.getError()!=CmdResult::RespNotMatch)
+    {
+        r.validateError();
+        return;
+    }
+    unsigned int rawCsd[4];
+    r.getLongResponse(rawCsd);
+    calculateCardData(rawCsd);
 
     //Lastly, try selecting the card and configure the latest bits
     {
