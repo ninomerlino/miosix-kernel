@@ -446,7 +446,7 @@ public:
      */
     unsigned int getShortResponse() { return response[0]; }
 
-/**
+    /**
      * \internal
      * \param response an array in which the 127bit response will be copied from 127 downto 1 plus an extra 0 at the end
      * Response is valid only if the command that was send returns a long reponse such as CMD9
@@ -456,8 +456,7 @@ public:
         response[1] = this->response[1];
         response[2] = this->response[2];
         response[3] = this->response[3];
-    }
-    
+    }    
 
     /**
      * \internal
