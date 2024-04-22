@@ -87,6 +87,6 @@ void mkfsTest(){
 void mkfsSexy(){
     intrusive_ref_ptr<DevFs> fs = FilesystemManager::instance().getDevFs();
     StringPart filename("sda");
-    int res = fs.mkfat32(filename);
+    int res = fs.get()->mkfat32(filename);
     printf("Result of sexy mkfs: %d\n", res);
 }
