@@ -62,6 +62,20 @@ void mkfsTest(){
         printf("Error formatting SD card\n");
     }
 
+    // Mount fs
+    intrusive_ref_ptr<FileBase> device;
+    device = fs.get()->open(deviceName, O_RDWR);
+    if(device.get() == NULL){
+        printf("Error opening device\n");
+        return;
+    }
+    Fat32* fat32 = new Fat32(device);
+    if(fat32->mount() == 0){
+        printf("SD card mounted\n");
+    }else{
+        printf("Error mounting SD card\n");
+    }
+
     //Create file
     FILE* file = fopen(filename, "w");
     if(file == NULL){
