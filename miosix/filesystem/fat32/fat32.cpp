@@ -479,13 +479,6 @@ int Fat32Fs::mkdir(StringPart& name, int mode)
     return translateError(f_mkdir(&filesystem,name.c_str()));
 }
 
-int Fat32Fs::mkfs(unsigned char sfd, unsigned int au)
-{
-    if(failed) return -ENOENT;
-    Lock<FastMutex> l(mutex);
-    return translateError(f_mkfs(&filesystem,(BYTE) sfd, (UINT) au));
-}
-
 int Fat32Fs::rmdir(StringPart& name)
 {
     return unlinkRmdirHelper(name,true);

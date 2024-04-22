@@ -192,11 +192,6 @@ int MountpointFs::mkdir(StringPart& name, int mode)
     return 0;
 }
 
-int MountpointFs::mkfs(unsigned char sfd, unsigned int au)
-{
-    return -EACCES;
-}
-
 int MountpointFs::rmdir(StringPart& name)
 {
     Lock<FastMutex> l(mutex);

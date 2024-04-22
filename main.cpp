@@ -13,14 +13,13 @@ using namespace miosix;
 
 bool deviceTest();
 void mkfsTest();
-void mkfsSexy();
 
 const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    printf("Lorenzo merlino è un bel ragazzo \n");
-    if(deviceTest()) mkfsSexy();
+    printf("Lorenzo Merlino è un bel ragazzo \n");
+    if(deviceTest()) mkfsTest();
     return 1;
 }
 
@@ -54,10 +53,9 @@ bool deviceTest(){
 }
 
 void mkfsTest(){
-    //Format sd card
-
-    int result = miosix::getFileDescriptorTable().mkfs("/sd", 1, 0);
-
+    intrusive_ref_ptr<DevFs> fs = FilesystemManager::instance().getDevFs();
+    StringPart deviceName("sda");
+    int result = fs.get()->mkfat32(deviceName);
     if(result == 0){
         printf("SD card formatted\n");
     }else{
@@ -82,11 +80,4 @@ void mkfsTest(){
 
     //Close file
     fclose(file);
-}
-
-void mkfsSexy(){
-    intrusive_ref_ptr<DevFs> fs = FilesystemManager::instance().getDevFs();
-    StringPart filename("sda");
-    int res = fs.get()->mkfat32(filename);
-    printf("Result of sexy mkfs: %d\n", res);
 }
