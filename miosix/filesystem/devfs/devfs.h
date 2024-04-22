@@ -257,6 +257,12 @@ public:
      * \return 0 on success, or a negative number on failure
      */
     virtual int mkfs(unsigned char sfd, unsigned int au);
+
+    /**
+     * Create a fat32 filesystem on the device
+     * \param deviceName device name
+     */
+    int mkfat32(StringPart& deviceName);
     
     /**
      * Remove a directory if empty

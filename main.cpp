@@ -6,27 +6,30 @@
 #include "miosix/filesystem/ioctl.h"
 #include "miosix.h"
 #include "miosix/filesystem/file_access.h"
+#include "miosix/filesystem/fat32/fat32.h"
 
 using namespace std;
 using namespace miosix;
 
-void deviceTest();
+bool deviceTest();
 void mkfsTest();
+void mkfsSexy();
 
 const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    deviceTest();
-    mkfsTest();
+    printf("Lorenzo merlino è un bel ragazzo \n");
+    if(deviceTest()) mkfsSexy();
     return 1;
 }
 
-void deviceTest(){
+bool deviceTest(){
     FILE* deviceSd = fopen("/dev/sda", "r");
 
     if(deviceSd == NULL){
         printf("Device not found\n");
+        return false;
     } else {
         printf("Device found\n");
     }
@@ -46,7 +49,8 @@ void deviceTest(){
     printf("SDIODriver::ioctl() - Card size: %lluKB, %lluGB\n",deviceSize/1024, deviceSize/(1024*1024*1024));
     printf("SDIODriver::ioctl() - Erase size: %dB\n",eraseSize);
     printf("SDIODriver::ioctl() - Write count: %dB\n",writeSize);
-    printf("SDIODriver::ioctl() - Read size: %dB\n",readSize);           
+    printf("SDIODriver::ioctl() - Read size: %dB\n",readSize);
+    return true;       
 }
 
 void mkfsTest(){
@@ -78,4 +82,11 @@ void mkfsTest(){
 
     //Close file
     fclose(file);
+}
+
+void mkfsSexy(){
+    intrusive_ref_ptr<DevFs> fs = FilesystemManager::instance().getDevFs();
+    StringPart filename("sda");
+    int res = fs.mkfat32(filename);
+    printf("Result of sexy mkfs: %d\n", res);
 }

@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include "filesystem/stringpart.h"
+#include "filesystem/fat32/ff.h"
 
 using namespace std;
 
@@ -46,6 +47,37 @@ static void fillStatHelper(struct stat* pstat, unsigned int st_ino,
     pstat->st_mode=mode;
     pstat->st_nlink=1;
     pstat->st_blksize=0; //If zero means file buffer equals to BUFSIZ
+}
+
+/**
+ * Translate between FATFS error codes and POSIX ones
+ * \param ec FATS error code
+ * \return POSIX error code
+ */
+static int translateError(int ec)
+{
+    switch(ec)
+    {
+        case FR_OK:
+            return 0;
+        case FR_NO_FILE:
+        case FR_NO_PATH:
+            return -ENOENT;
+        case FR_DENIED:
+            return -ENOSPC;
+        case FR_EXIST:
+            return -EEXIST;
+        case FR_WRITE_PROTECTED:
+            return -EROFS;
+        case FR_LOCKED:
+            return -EBUSY;
+        case FR_NOT_ENOUGH_CORE:
+            return -ENOMEM;
+        case FR_TOO_MANY_OPEN_FILES:
+            return -ENFILE;
+        default:
+            return -EACCES;
+    }
 }
 
 /**
@@ -398,6 +430,16 @@ int DevFs::mkdir(StringPart& name, int mode)
 int DevFs::mkfs(unsigned char sfd, unsigned int au)
 {
     return -EACCES; // No mkfs support in DevFs yet
+}
+
+int DevFs::mkfat32(StringPart& deviceName) {
+    intrusive_ref_ptr<FileBase> file;
+    StringPart filename("sda");
+    open(file, filename, O_RDWR, 0);
+    FATFS local;
+    local.drv = file;
+
+    return translateError(f_mkfs(&local,(BYTE) 1, (UINT) 0));
 }
 
 int DevFs::rmdir(StringPart& name)
