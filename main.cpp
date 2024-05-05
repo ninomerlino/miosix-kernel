@@ -18,7 +18,6 @@ const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    printf("Lorenzo Merlino è un bel ragazzo \n");
     if(deviceTest()) mkfsTest();
     return 1;
 }
@@ -53,28 +52,44 @@ bool deviceTest(){
 }
 
 void mkfsTest(){
-    intrusive_ref_ptr<DevFs> fs = FilesystemManager::instance().getDevFs();
+    FilesystemManager& fileSystemManager = FilesystemManager::instance();
+    intrusive_ref_ptr<DevFs> devFs = fileSystemManager.getDevFs();
     StringPart deviceName("sda");
-    int result = fs.get()->mkfat32(deviceName);
-    if(result == 0){
-        printf("SD card formatted\n");
-    }else{
+    int result = devFs.get()->mkfat32(deviceName);
+    if(result != 0){
         printf("Error formatting SD card\n");
     }
 
+    printf("SD card formatted\n");
+
+
     // Mount fs
     intrusive_ref_ptr<FileBase> device;
-    device = fs.get()->open(deviceName, O_RDWR);
+    devFs.get()->open(device, deviceName, O_RDWR, 0);
     if(device.get() == NULL){
         printf("Error opening device\n");
         return;
     }
-    Fat32* fat32 = new Fat32(device);
-    if(fat32->mount() == 0){
-        printf("SD card mounted\n");
-    }else{
+    Fat32Fs* fat32 = new Fat32Fs(device);
+    if(fat32->mountFailed()){
         printf("Error mounting SD card\n");
+        return;
     }
+    printf("SD card mounted\n");
+
+    StringPart sd("sd");
+    if(mkdir("sd", 0755) != 0){
+        printf("Failed to create directory sd\n");
+        return;
+    }
+    intrusive_ref_ptr<FilesystemBase> fsRef(fat32);
+
+    if(fileSystemManager.kmount("/sd", fsRef)!=0)
+    {
+        printf("Failed to mount fat32\n");
+        return;
+    }
+    printf("Fat 32 mounted");
 
     //Create file
     FILE* file = fopen(filename, "w");
