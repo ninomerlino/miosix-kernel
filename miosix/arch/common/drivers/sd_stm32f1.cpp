@@ -443,6 +443,7 @@ bool CmdResult::validateError()
 bool CmdResult::validateR1Response()
 {
     if(error!=Ok) return validateError();
+    unsigned int response = getShortResponse();
     //Note: this number is obtained with all the flags of R1 which are errors
     //(flagged as E in the SD specification), plus CARD_IS_LOCKED because
     //locked card are not supported by this software driver
@@ -470,6 +471,7 @@ bool CmdResult::validateR1Response()
 bool CmdResult::IRQvalidateR1Response()
 {
     if(error!=Ok) return false;
+    unsigned int response = getShortResponse();
     if(response & 0xfff98008) return false;
     return true;
 }
@@ -477,6 +479,7 @@ bool CmdResult::IRQvalidateR1Response()
 bool CmdResult::validateR6Response()
 {
     if(error!=Ok) return validateError();
+    unsigned int response = getShortResponse();
     if((response & 0xe008)==0) return true;
     DBGERR("CMD%d: R6 response error(s):\n",cmd);
     if(response & (1<<15)) DBGERR("command CRC failed\n");
@@ -488,6 +491,7 @@ bool CmdResult::validateR6Response()
 
 unsigned char CmdResult::getState()
 {
+    unsigned int response = getShortResponse();
     unsigned char result=(response>>9) & 0xf;
     DBG("CMD%d: State: ",cmd);
     switch(result)
