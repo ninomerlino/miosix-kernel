@@ -44,7 +44,7 @@ bool deviceTest(){
     ioctl(fileDescriptor, IOCTL_GET_ERASE_SIZE, &eraseSize);
     ioctl(fileDescriptor, IOCTL_GET_WRITE_SIZE, &writeSize);
 
-    printf("SDIODriver::ioctl() - Card size: %lluKB, %lluGB\n",deviceSize/1024, deviceSize/(1024*1024*1024));
+    printf("SDIODriver::ioctl() - Card size: %lluKB, %lluGB\n", deviceSize/1024, deviceSize/(1024*1024*1024));
     printf("SDIODriver::ioctl() - Erase size: %dB\n",eraseSize);
     printf("SDIODriver::ioctl() - Write count: %dB\n",writeSize);
     printf("SDIODriver::ioctl() - Read size: %dB\n",readSize);
@@ -55,9 +55,12 @@ void mkfsTest(){
     FilesystemManager& fileSystemManager = FilesystemManager::instance();
     intrusive_ref_ptr<DevFs> devFs = fileSystemManager.getDevFs();
     StringPart deviceName("sda");
+
     int result = devFs.get()->mkfat32(deviceName);
+
     if(result != 0){
-        printf("Error formatting SD card\n");
+        printf("Error formatting SD card %d\n", result);
+        return;
     }
 
     printf("SD card formatted\n");
@@ -78,8 +81,8 @@ void mkfsTest(){
     printf("SD card mounted\n");
 
     StringPart sd("sd");
-    if(mkdir("sd", 0755) != 0){
-        printf("Failed to create directory sd\n");
+    if(mkdir("/sd", 0755) != 0){
+        printf("Failed to create directory /sd\n");
         return;
     }
     intrusive_ref_ptr<FilesystemBase> fsRef(fat32);
