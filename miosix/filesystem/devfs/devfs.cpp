@@ -443,8 +443,7 @@ int DevFs::mkdir(StringPart& name, int mode)
 
 int DevFs::mkfat32(StringPart& deviceName) {
     intrusive_ref_ptr<FileBase> file;
-    StringPart filename("sda");
-    open(file, filename, O_RDWR, 0);
+    open(file, deviceName, O_RDWR, 0);
     FATFS local;
     local.drv = file;
 
