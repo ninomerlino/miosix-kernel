@@ -53,10 +53,9 @@ bool deviceTest(){
 
 void mkfsTest(){
     FilesystemManager& fileSystemManager = FilesystemManager::instance();
-    intrusive_ref_ptr<DevFs> devFs = fileSystemManager.getDevFs();
     StringPart deviceName("sda");
 
-    int result = devFs.get()->mkfat32(deviceName);
+    int result = fileSystemManager.mkfat32(deviceName);
 
     if(result != 0){
         printf("Error formatting SD card %d\n", result);
@@ -68,6 +67,7 @@ void mkfsTest(){
 
     // Mount fs
     intrusive_ref_ptr<FileBase> device;
+    intrusive_ref_ptr<DevFs> devFs = fileSystemManager.getDevFs();
     devFs.get()->open(device, deviceName, O_RDWR, 0);
     if(device.get() == NULL){
         printf("Error opening device\n");
