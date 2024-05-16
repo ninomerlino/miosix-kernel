@@ -52,37 +52,6 @@ static void fillStatHelper(struct stat* pstat, unsigned int st_ino,
 }
 
 /**
- * Translate between FATFS error codes and POSIX ones
- * \param ec FATS error code
- * \return POSIX error code
- */
-static int translateError(int ec)
-{
-    switch(ec)
-    {
-        case FR_OK:
-            return 0;
-        case FR_NO_FILE:
-        case FR_NO_PATH:
-            return -ENOENT;
-        case FR_DENIED:
-            return -ENOSPC;
-        case FR_EXIST:
-            return -EEXIST;
-        case FR_WRITE_PROTECTED:
-            return -EROFS;
-        case FR_LOCKED:
-            return -EBUSY;
-        case FR_NOT_ENOUGH_CORE:
-            return -ENOMEM;
-        case FR_TOO_MANY_OPEN_FILES:
-            return -ENFILE;
-        default:
-            return -EACCES;
-    }
-}
-
-/**
  * This file type is for reading and writing from devices
  */
 class DevFsFile : public FileBase
@@ -439,15 +408,6 @@ int DevFs::rename(StringPart& oldName, StringPart& newName)
 int DevFs::mkdir(StringPart& name, int mode)
 {
     return -EACCES; // No directories support in DevFs yet
-}
-
-int DevFs::mkfat32(StringPart& deviceName) {
-    intrusive_ref_ptr<FileBase> file;
-    open(file, deviceName, O_RDWR, 0);
-    FATFS local;
-    local.drv = file;
-
-    return translateError(f_mkfs(&local,(BYTE) 1, (UINT) 0));
 }
 
 int DevFs::rmdir(StringPart& name)
