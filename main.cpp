@@ -80,19 +80,20 @@ void mkfsTest(){
     }
     printf("SD card mounted\n");
 
+    // This is useless if at boot there already a fat32 fs
     StringPart sd("sd");
-    if(mkdir("/sd", 0755) != 0){
-        printf("Failed to create directory /sd\n");
-        return;
-    }
+    int mkdirResult = mkdir("/sd", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if(mkdirResult != 0){
+        printf("Failed to create directory /sd, it may already exist, error %d\n", mkdirResult);
+    } else printf("Created /sd folder");
     intrusive_ref_ptr<FilesystemBase> fsRef(fat32);
 
-    if(fileSystemManager.kmount("/sd", fsRef)!=0)
+    // Also this is useless if at boot there already a fat32 fs
+    int kmountResult = fileSystemManager.kmount("/sd", fsRef);
+    if(kmountResult!=0)
     {
-        printf("Failed to mount fat32\n");
-        return;
-    }
-    printf("Fat 32 mounted");
+        printf("Failed to mount fat32, error %d\n", kmountResult);
+    }else printf("Fat 32 mounted");
 
     //Create file
     FILE* file = fopen(filename, "w");
