@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
 }
 
 bool deviceTest(){
+    
     FILE* deviceSd = fopen("/dev/sda", "r");
 
     if(deviceSd == NULL){
