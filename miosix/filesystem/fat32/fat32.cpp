@@ -556,6 +556,14 @@ int Fat32Fs::mkdir(StringPart& name, int mode)
     return translateError(f_mkdir(&filesystem,name.c_str()));
 }
 
+int Fat32Fs::mkfs(intrusive_ref_ptr<FileBase> file)
+{
+    FATFS local;
+    local.drv = file;
+
+    return translateError(f_mkfs(&local,(BYTE) 1, (UINT) 0));
+}
+
 int Fat32Fs::rmdir(StringPart& name)
 {
     return unlinkRmdirHelper(name,true);
