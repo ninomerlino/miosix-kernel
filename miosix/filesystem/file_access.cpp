@@ -46,37 +46,6 @@ using namespace std;
 
 namespace miosix {
 
-    /**
-     * Translate between FATFS error codes and POSIX ones
-     * \param ec FATS error code
-     * \return POSIX error code
-     */
-    static int translateError(int ec)
-    {
-        switch(ec)
-        {
-            case FR_OK:
-                return 0;
-            case FR_NO_FILE:
-            case FR_NO_PATH:
-                return -ENOENT;
-            case FR_DENIED:
-                return -ENOSPC;
-            case FR_EXIST:
-                return -EEXIST;
-            case FR_WRITE_PROTECTED:
-                return -EROFS;
-            case FR_LOCKED:
-                return -EBUSY;
-            case FR_NOT_ENOUGH_CORE:
-                return -ENOMEM;
-            case FR_TOO_MANY_OPEN_FILES:
-                return -ENFILE;
-            default:
-                return -EACCES;
-        }
-    }
-
 /*
  * A note on the use of strings in this file. This file uses three string
  * types: C string, C++ std::string and StringPart which is an efficent
@@ -761,15 +730,18 @@ void FilesystemManager::umountAll()
     filesystems.clear();
 }
 
-int FilesystemManager::mkfat32(StringPart& deviceName) {
+int FilesystemManager::mkfat32(const char* devicePath) {
     intrusive_ref_ptr<FileBase> file;
-    StringPart filename("sda");
     intrusive_ref_ptr<DevFs> devFs = getDevFs();
-    devFs.get()->open(file, filename, O_RDWR, 0);
-    FATFS local;
-    local.drv = file;
+    string path = string(devicePath);
+    ResolvedPath openData=FilesystemManager::instance().resolvePath(path);
 
-    return translateError(f_mkfs(&local,(BYTE) 1, (UINT) 0));
+    if(openData.result<0) return openData.result;
+    StringPart sp(path,string::npos,openData.off);
+    devFs.get()->open(file, sp, O_RDWR, 0);
+    
+    // TODO: Here maybe use swith case to choose the filesystem
+    return Fat32Fs::mkfs(file);
 }
 
 ResolvedPath FilesystemManager::resolvePath(string& path, bool followLastSymlink)

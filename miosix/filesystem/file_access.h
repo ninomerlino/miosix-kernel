@@ -460,7 +460,7 @@ public:
      * Create a fat32 filesystem on the device
      * \param deviceName device name
      */
-    int mkfat32(StringPart& deviceName);
+    int mkfat32(const char* deviceName);
     
     #ifdef WITH_DEVFS
     /**
