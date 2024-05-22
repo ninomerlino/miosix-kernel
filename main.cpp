@@ -19,9 +19,9 @@ const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    // if(deviceTest()) mkfsTest();
-
-    loopMountTest();
+    deviceTest();
+    mkfsTest();
+    // loopMountTest();
     return 1;
 }
 
