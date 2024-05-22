@@ -13,12 +13,15 @@ using namespace miosix;
 
 bool deviceTest();
 void mkfsTest();
+void loopMountTest();
 
 const char* filename = "/sd/test.txt";
 
 int main(int argc, char* argv[])
 {
-    if(deviceTest()) mkfsTest();
+    // if(deviceTest()) mkfsTest();
+
+    loopMountTest();
     return 1;
 }
 
@@ -118,4 +121,28 @@ void mkfsTest(){
 
     //Close file
     fclose(file);
+}
+
+void loopMountTest(){
+    const char* filefspath = "/sd/filefs";
+    FILE* file = fopen(filefspath, "w");
+    if(file == NULL){
+        printf("Error creating file\n");
+        return;
+    }else{
+        printf("File created\n");
+    }
+
+    fclose(file);
+
+    // Unexpected usage fault
+    FilesystemManager& fileSystemManager = FilesystemManager::instance();
+    int result = fileSystemManager.mkfat32(filefspath);
+
+    if(result != 0){
+        printf("Error formatting file as fs %d\n", result);
+        return;
+    }
+
+    printf("File formatted as fs\n");
 }
