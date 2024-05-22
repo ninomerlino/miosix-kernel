@@ -53,9 +53,14 @@ bool deviceTest(){
 }
 
 void mkfsTest(){
+    // Unmount fs
+    if(FilesystemManager::instance().umount("/sd") != 0)
+        printf("Failed to unmount fat32 fs\n");
+    else printf("Old fat32 fs unmounted\n");
+
+    // Format SD card
     FilesystemManager& fileSystemManager = FilesystemManager::instance();
     const char* deviceName = "/dev/sda";
-    StringPart sp(deviceName);
 
     int result = fileSystemManager.mkfat32(deviceName);
 
@@ -66,35 +71,34 @@ void mkfsTest(){
 
     printf("SD card formatted\n");
 
+    // Create /sd directory
+    result = mkdir("/sd", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if(result != 0){
+        printf("Failed to create directory /sd, it may already exist, error %d\n", result);
+    } else printf("Created /sd folder\n");
+
     // Mount fs
     intrusive_ref_ptr<FileBase> device;
+    StringPart sp("sda");
     intrusive_ref_ptr<DevFs> devFs = fileSystemManager.getDevFs();
-    devFs.get()->open(device, sp, O_RDWR, 0);
-    if(device.get() == NULL){
-        printf("Error opening device\n");
+    result = devFs.get()->open(device, sp, O_RDWR, 0);
+    if(result != 0){
+        printf("Error opening devFs, error %d\n", result);
         return;
     }
+    printf("DevFs opened\n");
     Fat32Fs* fat32 = new Fat32Fs(device);
     if(fat32->mountFailed()){
         printf("Error mounting SD card\n");
         return;
     }
     printf("SD card mounted\n");
-
-    // This is useless if at boot there already a fat32 fs
-    StringPart sd("sd");
-    int mkdirResult = mkdir("/sd", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if(mkdirResult != 0){
-        printf("Failed to create directory /sd, it may already exist, error %d\n", mkdirResult);
-    } else printf("Created /sd folder");
     intrusive_ref_ptr<FilesystemBase> fsRef(fat32);
-
-    // Also this is useless if at boot there already a fat32 fs
     int kmountResult = fileSystemManager.kmount("/sd", fsRef);
     if(kmountResult!=0)
     {
-        printf("Failed to mount fat32, error %d\n", kmountResult);
-    }else printf("Fat 32 mounted");
+        printf("Failed to mount fat32 to /sd, error %d\n", kmountResult);
+    }else printf("Fat32 mounted on /sd\n");
 
     //Create file
     FILE* file = fopen(filename, "w");
